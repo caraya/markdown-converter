@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>{{.Metadata.Title}}</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>{{.Metadata.Title}}</h1>
+        <p>Created on: {{.Metadata.Date}}</p>
+        <p>Filed Under: {{range $index, $tag := .Metadata.Tags}}{{if $index}}, {{end}}<span>{{$tag}}</span>{{end}}</p>
+      </header>
+      {{.Content}}
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>
