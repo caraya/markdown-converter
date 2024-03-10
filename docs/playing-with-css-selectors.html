@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Playing with CSS Selectors</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Playing with CSS Selectors</h1>
+        <p>Created on: 2024-02-07</p>
+        <p>Filed Under: <span>CSS</span></p>
+      </header>
+      <h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li>
+<ul>
+<li>
+<a href="#the-is-pseudo-class">The :is() Pseudo-class</a></li>
+<li>
+<a href="#the-not-pseudo-class">The :not() Pseudo-class</a></li>
+<li>
+<a href="#the-has-pseudo-class">The :has() Pseudo-class</a></li>
+<li>
+<a href="#the-where-pseudo-class">The :where() Pseudo-class</a></li>
+<li>
+<a href="#note-about-specificity">Note about specificity</a></li>
+</ul>
+</li>
+</ul>
+<p>CSS has evolved significantly over the last few years. Some of these changes deal with a set of selectors known as the <em>functional pseudo-classes</em>.</p>
+<p>The <code>:not()</code> pseudo-class has been around for a while (at least since IE9), but when the other selectors we'll discuss on the post were introduced in the <a href="https://w3c.github.io/csswg-drafts/selectors/">Selectors Level 4</a> specification, the <a href="https://drafts.csswg.org/selectors/#negation">:not()</a> pseudo-class was changed to accept a selector list to keep it in line with the other functional pseudo-classes.</p>
+<h2 id="the-is-pseudo-class">The <strong>:is()</strong> Pseudo-class</h2>
+<p>The Matches-Any Pseudo-class accepts a comma-separated list of selectors and matches any element that can be selected by one of the items in the list.</p>
+<p>This example will match any h2 element that is contained in an article, section, or aside element.</p>
+<pre><code class="language-css">:is(article, section, aside) h2 {
+	color: oklch(0.65 0.27 341);
+}
+</code></pre>
+<p>This would be useful when we want to style all elements of the same type in some sections of a document but not everywhere.</p>
+<h2 id="the-not-pseudo-class">The <strong>:not()</strong> Pseudo-class</h2>
+<p>This pseudo-class represents elements that do not match a list of selectors in the parameter.</p>
+<p>The first example will select all the list items except the last one (all the <code>li</code> elements that are not the last child on the list).</p>
+<pre><code class="language-css">li:not(:last-child) {}
+</code></pre>
+<p>The following example will change the colors of all links that are not descendants of an article, down to any level.</p>
+<pre><code class="language-css">h2:not(article *) {
+  color: oklch(1 1 1);
+  background-color: oklch(0 0 0)
+}
+</code></pre>
+<h2 id="the-has-pseudo-class">The <strong>:has()</strong> Pseudo-class</h2>
+<p>The Relational Pseudo-class provides a way to select a parent element based on its children or siblings.</p>
+<p>According to the CSS Selectors Level 4 specification (emphasis mine):</p>
+<blockquote>
+<p>The <code>:has()</code> pseudo-class cannot be nested; <code>:has()</code> is not valid within <code>:has()</code>. Also, unless explicitly defined as a <strong>:has-allowed pseudo-element</strong>, pseudo-elements are not valid selectors within <code>:has()</code>. (This specification does not define any :has-allowed pseudo-elements, but other specifications may do so.)</p>
+<p>Source: <a href="https://drafts.csswg.org/selectors/#relational">CSS Selectors Level 4</a></p>
+</blockquote>
+<p>The first example will only match an <code>a</code> element with an image as their direct child.</p>
+<pre><code class="language-css">a:has(&gt; img) {
+	text-decoration: none;
+}
+</code></pre>
+<p>The following selector matches a <code>dt</code> element immediately followed by another <code>dt</code> element:</p>
+<pre><code class="language-css">dt:has(+ dt) {
+	font-weight: 700;
+}
+</code></pre>
+<p>The following selector uses <code>:not()</code> and <code>:has()</code> to match <code>section</code> elements that without any heading elements:</p>
+<pre><code class="language-css">section:not(:has(h1, h2, h3, h4, h5, h6)) {
+	border: 1px solid red;
+}
+</code></pre>
+<h2 id="the-where-pseudo-class">The <strong>:where()</strong> Pseudo-class</h2>
+<p>:where(), behaves like the :is() selector, but its specificity is always zero.</p>
+<h2 id="note-about-specificity">Note about specificity</h2>
+<p>When a functional pseudo-class like <code>:is()</code>, <code>:not()</code> or <code>:has()</code> takes more than one selector as its value, it takes the highest specificity of the included selectors.</p>
+<p>Using an example from <a href="https://cloudfour.com/thinks/surprising-facts-about-new-css-selectors/">Surprising Facts About New CSS Selectors</a> we'll see how these selectors change the way CSS matches.</p>
+<p>Given the following CSS rules</p>
+<pre><code class="language-css">:is(#unique, p) {
+	color: red;
+}
+
+.intro {
+	color: green;
+}
+</code></pre>
+<p>We would expect the HTML below to match the <code>.intro</code> rule since a class selector has higher specificity</p>
+<pre><code class="language-html">&lt;p class=&quot;intro&quot;&gt;This will also be red&lt;/p&gt;
+</code></pre>
+<p>But even if the paragraph doesn't have an <code>id</code> attribute, the <code>:is()</code> attribute contains a more specific ID attribute, making it more specific than a class attribute.</p>
+<p>If you use the <code>:where()</code> selector, then the specificity of the selector is always equal to zero (0). If we change the pseudo-class from is to <code>:where()</code> we'll have the opposite result.</p>
+<p>The <code>p</code> element will have a specificity of zero even though it's part of a <code>where()</code> selector with an <code>id</code> attribute. The specificity will be zero regardless of the specificity of the components inside the selector.</p>
+<p><code>&lt;p class=&quot;intro&quot;&gt;&lt;/p&gt;</code> will be green, rather than red.</p>
+<pre><code class="language-css">:where(#unique, p) {
+	color: red;
+}
+
+.intro {
+	color: green;
+}
+
+/*
+&lt;p class=&quot;intro&quot;&gt;This will be green&lt;/p&gt;
+*/
+</code></pre>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>

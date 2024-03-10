@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Select an element which doesn&#39;t descend from another in CSS</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Select an element which doesn&#39;t descend from another in CSS</h1>
+        <p>Created on: 2024-01-22</p>
+        <p>Filed Under: <span>CSS</span>, <span>Tips and Tricks</span>, <span>Notes</span></p>
+      </header>
+      <p>There may be times when we may want to style elements that are not direct descendants of the elements that we want to style.</p>
+<p>In <a href="https://chriskirknielsen.com/blog/select-an-element-which-doesnt-descend-from-another-in-css/">Select an Element Which Doesn't Descend From Another in CSS</a> Chris Nielsen outlines a way to do this using articles and links as examples.</p>
+<p>This is a skeleton of the content.</p>
+<pre><code class="language-html">&lt;body&gt;
+	...
+		&lt;article class=&quot;archived&quot;&gt;
+			&lt;p&gt;
+				&lt;a href=&quot;#&quot;&gt;Link&lt;/a&gt;
+			&lt;/p&gt;
+		&lt;/article&gt;
+&lt;/body&gt;
+</code></pre>
+<p>If we want to select a <code>a</code> element that is not a direct descendant of an element with the class <code>.archived</code>, we might start with code like this:</p>
+<pre><code class="language-css">:not(.archived) &gt; a {
+  background-color: hotpink;
+}
+</code></pre>
+<p>But this will not work for any but the most basic example that have <code>a</code> elements whose parents do not have the <code>archived</code> class.</p>
+<p>instead we can use the following selector:</p>
+<pre><code class="language-css">a:not(.archived *) {
+  background-color: oklch(0.65 0.27 341);
+}
+</code></pre>
+<p>The change to the CSS represents something different: It means match all <code>a</code> elements who are not a descendant of an element with class <code>archived</code>.</p>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>

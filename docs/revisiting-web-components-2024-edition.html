@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Revisiting Web Components (2024 edition)</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Revisiting Web Components (2024 edition)</h1>
+        <p>Created on: 2024-01-24</p>
+        <p>Filed Under: <span>Javascript</span>, <span>Web Components</span></p>
+      </header>
+      <h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li>
+<ul>
+<li>
+<a href="#what-are-web-components">What are web components?</a><ul>
+<li>
+<a href="#a-little-bit-of-history">A little bit of history</a></li>
+<li>
+<a href="#web-components-technologies">Web Components Technologies</a><ul>
+<li>
+<a href="#html-templates-slots-and-declarative-shadow-dom">HTML Templates, Slots and Declarative Shadow DOM</a></li>
+<li>
+<a href="#custom-elements">Custom Elements</a></li>
+<li>
+<a href="#custom-elements-lifecycle-elements">Custom Elements Lifecycle Elements</a></li>
+<li>
+<a href="#shadow-dom">Shadow DOM</a><ul>
+<li>
+<a href="#declarative-shadow-dom">Declarative Shadow DOM</a></li>
+</ul>
+</li>
+<li>
+<a href="#css-parts">CSS Parts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<a href="#using-slots-for-progressive-enhancement">Using slots for progressive enhancement</a></li>
+<li>
+<a href="#links-and-resources">Links and Resources</a></li>
+</ul>
+</li>
+</ul>
+<p>I've written about web components a lot over the years but not recently. I think it's time to take a look at where we're at, and the newer technologies that have emerged under the web components umbrella.</p>
+<h2 id="what-are-web-components">What are web components?</h2>
+<p>Web Components is the umbrella term for a set of technologies (custom elements, shadow DOM and HTML templates) that make it easier to create custom elements for your pages and applications.</p>
+<p>A web component may look like this when used in a web document:</p>
+<pre><code class="language-html">&lt;image-gallery&gt;&lt;/image-gallery&gt;
+</code></pre>
+<p>And they would behave the same way as built-in elements like <code>video</code> and <code>audio</code>.</p>
+<h3 id="a-little-bit-of-history">A little bit of history</h3>
+<p>The original proposals for web components were presented by Google starting in 2013 with a first draft of <a href="https://web.archive.org/web/20130608123733/http://www.w3.org/TR/custom-elements/">custom elements v0</a></p>
+<p>Custom Element V1, the current version of the specifications, was released in 2016. Since then we've had additions and enhancements to the different specifications.</p>
+<p>This is where I'll pick up the discussion</p>
+<h3 id="web-components-technologies">Web Components Technologies</h3>
+<p>Three core APIs make web components and a few auxiliary APIs make it easier to author and style web components. I've chosen three auxiliary APIs to discuss in this post</p>
+<h4 id="html-templates-slots-and-declarative-shadow-dom">HTML Templates, Slots and Declarative Shadow DOM</h4>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_templates_and_slots">template</a> HTML element allows developers to include content that will not be rendered at page load and can be loaded and displayed programmatically at a later time.</p>
+<p>We will use the following example throughout the section.</p>
+<pre><code class="language-html">&lt;template id=&quot;my-paragraph&quot;&gt;
+  &lt;h2&gt;Section Title&lt;/h2&gt;
+  &lt;p&gt;My paragraph&lt;/p&gt;
+&lt;/template&gt;
+</code></pre>
+<p>While this template contains valid HTML, it will not be rendered to the page until you grab the content with Javascript using something like this code:</p>
+<pre><code class="language-js">let template = document.getElementById(&quot;my-paragraph&quot;);
+let templateContent = template.content;
+document.body.appendChild(templateContent);
+</code></pre>
+<p>We can also add the content of the template to a custom element's shadow root. We'll discuss the details later, for now, the code looks like this:</p>
+<pre><code class="language-js">customElements.define(
+  &quot;my-paragraph&quot;,
+  class extends HTMLElement {
+    constructor() {
+      // always use super() first
+      super();
+      let template = document.getElementById(&quot;my-paragraph&quot;);
+      let templateContent = template.content;
+
+      const shadowRoot = this.attachShadow({ mode: &quot;open&quot; });
+      shadowRoot.appendChild(templateContent.cloneNode(true));
+    }
+  },
+);
+</code></pre>
+<p>The element will only display the content we hardcoded into the template. But let's say that we want to be able to change the title and the content of the paragraph.</p>
+<p>To do that, we use the <code>slot</code> element in our templates, we modify our paragraph template by inserting slot elements where we want to customize the content.</p>
+<p>The modified template looks like this:</p>
+<pre><code class="language-html">&lt;template id=&quot;my-paragraph&quot;&gt;
+  &lt;h2&gt;&lt;slot name=&quot;section-title&quot;&gt;Section Title&lt;/slot&gt;&lt;/h2&gt;
+  &lt;p&gt;&lt;slot name=&quot;my-text&quot;&gt;My default paragraph text&lt;/slot&gt;&lt;/p&gt;
+&lt;/template&gt;
+</code></pre>
+<p>we can then tailor the content that we display to the user.</p>
+<p>If we use the default element, it will display the default material included in the element template.</p>
+<pre><code class="language-html">&lt;my-paragraph&gt;&lt;/my-paragraph&gt;
+</code></pre>
+<p>However, if we use a <code>slot</code> attribute with the same name we defined in the template, it will override the default value with the content we provide.</p>
+<pre><code class="language-html">&lt;my-paragraph&gt;
+  &lt;span slot=&quot;section-title&quot;&gt;Custom Section Title&lt;/span&gt;
+  &lt;span slot=&quot;my-text&quot;&gt;custom text for this instance of the custom element&lt;/span&gt;
+&lt;/my-paragraph&gt;
+</code></pre>
+<p>Templates give us a good starting point for custom elements. The next step is to build the element that uses the templates.</p>
+<h4 id="custom-elements">Custom Elements</h4>
+<p>The custom element API is the core of web components. It defines the element and how it will behave under certain conditions.</p>
+<p>The component definition is done with the <code>define</code> method. This method takes two parameters: the element name (must have a hyphen <code>-</code> character in it) and the element definition.</p>
+<p>In our example, we use an anonymous class to define the element. This class extends the <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement">HTMLElement</a> base class.</p>
+<p>We're working with autonomous elements that inherit from HTMLElement, not customized built-in elements that inherit from more specialized elements.</p>
+<pre><code class="language-js">customElements.define(
+  &quot;my-paragraph&quot;,
+  class extends HTMLElement {
+    constructor() {
+      // always use super() first
+      super();
+      let template = document.getElementById(&quot;my-paragraph&quot;);
+      let templateContent = template.content;
+
+      const shadowRoot = this.attachShadow({ mode: &quot;open&quot; });
+      shadowRoot.appendChild(templateContent.cloneNode(true));
+    }
+  },
+);
+</code></pre>
+<p>Most of the work for this element is done in the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/constructor">constructor</a> method.</p>
+<p>We always call the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/super">super()</a> constructor. This will make the methods in the base class available to our new class.</p>
+<p>We capture both the template element and its content into variables.</p>
+<p>We then create a shadow root using its <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/attachShadow">attachShadow</a> method.</p>
+<p>Finally, we add the content of our template by inserting a clone of the template content we captured earlier.</p>
+<p>Now we have a self-contained element that can be instantiated as many times as necessary.</p>
+<h4 id="custom-elements-lifecycle-elements">Custom Elements Lifecycle Elements</h4>
+<p>Custom elements provide four life cycle events to react to different events that may happen to the component.</p>
+<p>These events are:</p>
+<dl>
+<dt>connectedCallback()</dt>
+<dd>called each time the custom element is added to the document.</dd>
+<dd>Developers should implement a custom element setup in this callback rather than the constructor.</dd>
+<dt>disconnectedCallback()</dt>
+<dd>called each time the element is removed from the document.</dd>
+<dd>This is where developers should do any teardown necessary for the component</dd>
+<dt>adoptedCallback()</dt>
+<dd>called each time the element is moved to a new document.</dd>
+<dt>attributeChangedCallback()</dt>
+<dd>Called whenever an attribute whose name is listed in the element's <code>observedAttributes</code> property is added, modified, removed, or replaced.</dd>
+<dd>The element class should also define a static <code>observedAttributes</code> method.</dd>
+</dl>
+<h4 id="shadow-dom">Shadow DOM</h4>
+<p>Shadow DOM provides encapsulation for our custom elements with their own structure and interactivity. This is no different from what browser makers do with <code>video</code>, <code>audio</code>, and <code>select</code> elements.</p>
+<p><img src="https://res.cloudinary.com/dfh6ihzvj/image/upload/c_scale,w_500/f_auto,q_auto/shadow-dom-video.png" alt="Example of Google Chrome's built-in Shadow DOM for video elements" /></p>
+<p>The idea is that, inside our custom element's constructor method we create the shadow root, the base for the element's encapsulated content using the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/attachShadow">attachShadow</a> method.</p>
+<p>TO place the content, we append a clone of the template content element we defined earlier in the constructor.</p>
+<pre><code class="language-js">  const shadowRoot = this.attachShadow({ mode: &quot;open&quot; });
+  shadowRoot.appendChild(templateContent.cloneNode(true));
+</code></pre>
+<h5 id="declarative-shadow-dom">Declarative Shadow DOM</h5>
+<p>Historically, it has been difficult to use Shadow DOM with Server-Side Rendering because there was no built-in way to express Shadow Roots in the server-generated HTML. There are also performance implications when attaching Shadow Roots to DOM elements that have already been rendered without them. This can cause layout shifting after the page has loaded, or temporarily show a flash of unstyled content (&quot;FOUC&quot;) while loading the Shadow Root's stylesheets.</p>
+<p>Declarative Shadow DOM (DSD) removes this limitation, bringing Shadow DOM to the server.</p>
+<p>To use Declarative Shadow DOM in our custom elements, we have to make a few changes</p>
+<p>The first change is to add the <code>shadowrootmode</code> attribute to the <code>template</code> element. This will tell the browser to use the template as the value of the shadow root for the parent element.</p>
+<pre><code class="language-html">&lt;template id=&quot;my-paragraph&quot; shadowrootmode=&quot;open&quot;&gt;
+  &lt;h2&gt;Section Title&lt;/h2&gt;
+  &lt;p&gt;My paragraph&lt;/p&gt;
+&lt;/template&gt;
+</code></pre>
+<p>We still need to create the shadow root, clone the template and attach the clone but the way we do it is slightly different.</p>
+<p>Instead of using</p>
+<pre><code class="language-js">let template = document.getElementById(&quot;my-paragraph&quot;);
+let templateContent = template.content;
+
+const shadowRoot = this.attachShadow({ mode: &quot;open&quot; });
+shadowRoot.appendChild(templateContent.cloneNode(true));
+</code></pre>
+<p>We use a slightly different version since the one above doesn't work when using Declarative Shadow DOM</p>
+<pre><code class="language-js">const template = document
+	.getElementById('my-paragraph-template')
+	.content;
+
+this.attachShadow({
+  mode: 'open'
+}).appendChild(template.cloneNode(true));
+</code></pre>
+<p>This element uses <code>observedAttributes</code> and the <code>attributeChangedCallback</code> lifecycle method to make live changes to the dimensions of the element.</p>
+<p>It also uses CSS custom elements, updated from Javascript, to handle the component styles.</p>
+<pre><code class="language-js">static get observedAttributes() {
+  return ['width', 'height'];
+}
+
+attributeChangedCallback(name, oldValue, newValue) {
+  if (name === 'width') {
+    this.style.setProperty('--custom-width', newValue);
+  } else if (name === 'height') {
+    this.style.setProperty('--custom-height', newValue);
+  }
+}
+</code></pre>
+<h4 id="css-parts">CSS Parts</h4>
+<p>One of the biggest issues with web components is how to style them. Web Components V0 had piercing combinators that would allow styles to pierce to and from the Shadow DOM. Those were removed for V1 custom elements as they were seen as a contradiction to Shadow DOM encapsulation.</p>
+<p>CSS Parts, or technically CSS Shadow Parts, use the <code>part</code> attribute in the custom element template to expose the attached element to CSS, and the`:<code>:part</code> pseudo-element in CSS to style the exposed element with a matching part name.</p>
+<p>To work with parts we need to modify the template and add parts to the elements that we want to style from outside the element.</p>
+<pre><code class="language-html">&lt;template id=&quot;my-paragraph&quot; shadowrootmode=&quot;open&quot;&gt;
+  &lt;h2 part=&quot;title&quot;&gt;Section Title&lt;/h2&gt;
+  &lt;p part=&quot;content&quot;&gt;My paragraph&lt;/p&gt;
+&lt;/template&gt;
+</code></pre>
+<p>After the element has been instantiated, we can use CSS to style the exposed parts from our main stylesheet.</p>
+<p>The syntax is wordy. It starts with the name of the custom element followed by the <code>::part</code> pseudo-element and the target part as the attribute.</p>
+<pre><code class="language-css">my-paragraph::part(title) {
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+my-paragraph::part(title) {
+  font-weight: 300;
+}
+</code></pre>
+<h2 id="using-slots-for-progressive-enhancement">Using slots for progressive enhancement</h2>
+<p>Most of the time we see web components like this:</p>
+<pre><code class="language-html">&lt;my-paragraph&gt;&lt;/my-paragraph&gt;
+</code></pre>
+<p>This works well when we have internet connectivity, and Javascript is enabled in the browser.</p>
+<p>But what happens if it doesn't work?</p>
+<p>If we want to use custom elements as designed, we can use slots and named slots when we design the markup for the custom element. If we've added the <code>slot</code> attributes to the template, then whatever content we put in the slots of the element instance will be processed.</p>
+<p>These may not be everyone's cup of tea. So let's look for another potential solution</p>
+<p>Jim Nielsen (<a href="https://blog.jim-nielsen.com/2023/html-web-components/">HTML Web Components</a>), Jeremy Keith (<a href="https://adactio.com/journal/20618">HTML Web Components</a>) and Chris Coyier <a href="https://frontendmasters.com/blog/light-dom-only/">Light-DOM-Only Web Components are Sweet</a> all advocate for a &quot;light DOM&quot; only approach to web components that, in essence, is a way to package progressive enhancement for a given set of markup using web components.</p>
+<p>Dave Rupert's <a href="https://daverupert.com/2021/10/html-with-superpowers/">HTML with Superpowers</a> presents the theoretical background and Jim Nielsen presents a working example of an HTML, no-shadow-DOM custom element.</p>
+<p>The custom element has all the markup inside. We won't be using templates or shadow DOM so all the content we want to display must be inside the element instance.</p>
+<pre><code class="language-html">&lt;icon-list size=&quot;md&quot;&gt;
+  &lt;a href=&quot;...&quot;&gt;
+    &lt;img src=&quot;...&quot; width=&quot;128&quot; height=&quot;128&quot; /&gt;
+  &lt;/a&gt;
+&lt;/icon-list&gt;
+</code></pre>
+<p>The class that defines the custom element looks like normal. There is no shadow DOM creation or template content attachment; What remains is the lifecycle method that upgrades the custom element.</p>
+<p>The element registration works the</p>
+<pre><code class="language-js">class IconList extends HTMLElement {
+  connectedCallback() {
+    // Add `&lt;input&gt;` controls for changing icon size/spacing
+    this.insertAdjacentHTML = `
+      &lt;input type=range name=size /&gt;
+    `;
+
+    // Then event listeners when those values change, e.g.
+    this.querySelector(&quot;input[name=size]&quot;)
+      .addEventListener((e) =&gt; {
+        this.size = e.target.value;
+        this._renderSizing();
+      });
+  }
+
+  _renderSizing() {
+    this.querySelectorAll(&quot;img&quot;).forEach(img =&gt; {
+       // swap out the `src` and `srcset`
+       // and change `width` and `height`
+    });
+  }
+}
+
+customElements.define(&quot;icon-list&quot;, IconList);
+</code></pre>
+<p>Because we don't use shadow DOM, we can store the CSS for the custom element along in the site's CSS stylesheets.</p>
+<pre><code class="language-css">icon-list {
+  /* styles */
+}
+icon-list[size=&quot;sm&quot;] {
+  /* styles for 64px sized icons */
+}
+icon-list[size=&quot;md&quot;] {
+  /* styles for 128px sized icons */
+}
+icon-list[size=&quot;lg&quot;] {
+  /* styles for 256px sized icons */
+}
+icon-list[size=&quot;xl&quot;] {
+  /* styles for 512px sized icons */
+}
+</code></pre>
+<p>This is no different than what we would normally do:</p>
+<ul>
+<li>Add the Javascript code as functions either inline or an external script</li>
+<li>Add the CSS to stylesheets either inline or external stylesheets</li>
+<li>Add the HTML inside a <code>div</code> instead of a custom element</li>
+</ul>
+<p>In the end, it's up to each developer to choose which method to use.</p>
+<h2 id="links-and-resources">Links and Resources</h2>
+<ul>
+<li>Parts of Web Components:
+<ul>
+<li><a href="https://web.dev/articles/custom-elements-v1">custom elements V1</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_templates_and_slots">templates and slots</a></li>
+<li><a href="https://web.dev/articles/shadowdom-v1">shadow DOM V1</a>
+<ul>
+<li><a href="https://developer.chrome.com/docs/css-ui/declarative-shadow-dom">Declarative shadow DOM</a></li>
+</ul>
+</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/::part">part CSS pseudo-element</a>
+<ul>
+<li><a href="https://web.dev/learn/html/template/#styling_outside_of_the_current_scope">Styling outside of the current scope</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Declarative Web Components
+<ul>
+<li><a href="https://blog.jim-nielsen.com/2023/html-web-components/">HTML Web Components</a> — Jim Nielsen</li>
+<li><a href="https://adactio.com/journal/20618">HTML Web Components</a> — Jeremy Keith</li>
+<li><a href="https://www.abeautifulsite.net/posts/a-web-component-story/">A Web Component Story</a> — Cory LaViska</li>
+<li><a href="https://meyerweb.com/eric/thoughts/2023/11/01/blinded-by-the-light-dom/">Blinded By the Light DOM</a> — Eric Meyer</li>
+<li><a href="https://frontendmasters.com/blog/light-dom-only/">Light-DOM-Only Web Components are Sweet</a> — Chris Coyier</li>
+</ul>
+</li>
+</ul>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>

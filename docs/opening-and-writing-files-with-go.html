@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Opening and Writing Files With Go</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Opening and Writing Files With Go</h1>
+        <p>Created on: 2024-03-13</p>
+        <p>Filed Under: <span>Go</span>, <span>CLI Apps</span></p>
+      </header>
+      <h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li>
+<ul>
+<li>
+<a href="#the-first-iteration-the-basics">The first iteration: the basics</a></li>
+<li>
+<a href="#the-second-less-naive-iteration">The second, less naive, iteration</a></li>
+<li>
+<a href="#third-times-the-charm-third-iteration">Third Time's The Charm: Third Iteration</a></li>
+</ul>
+</li>
+</ul>
+<p>In the last post, we looked at how to build an API server using Go.</p>
+<p>In this post, we'll look at one part of building command line applications: how to open and write files.</p>
+<p>We'll also cover related areas like reading input from the command line and how to get user input and act on that input.</p>
+<p>In the next post, we'll look at how to use third-party libraries in Go programs by building a Markdown conversion tool.</p>
+<h2 id="the-first-iteration-the-basics">The first iteration: the basics</h2>
+<p>The first attempt is very simple. It does the following:</p>
+<ol>
+<li>Opens a specific file that has been hardcoded into the program
+<ol>
+<li>In the next iteration, we'll change the code so it'll take</li>
+</ol>
+</li>
+<li>Writes the file to a specific location, also hardcodes on the program
+<ol>
+<li>When we write the file we also specify a Unix permission number that will dictate what different users can do with the file</li>
+</ol>
+</li>
+<li>Prints the content of the file to the terminal
+<ol>
+<li>When printing the content of the file to the terminal, we cast data to a string, otherwise, it will print numeric values for each byte (representing each character) in the file</li>
+</ol>
+</li>
+</ol>
+<p>There is no error checking beyond the basic success checks. For example: We don't check if the file we want to open is a text file or not.</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;fmt&quot;
+	&quot;os&quot;
+)
+
+func main() {
+	data, err := os.ReadFile(&quot;creating-the-backend-for-a-web-app-in-go.md&quot;) // 1
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	mydata := []byte(data)
+
+	err = os.WriteFile(&quot;myfile.md&quot;, mydata, 0777) // 2
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(string(data)) // 3
+}
+</code></pre>
+<h2 id="the-second-less-naive-iteration">The second, less naive, iteration</h2>
+<p>The second version only modifies the read method and introduces a few changes.</p>
+<ol>
+<li>It validates that we pass 2 arguments to the <code>go</code> command, the name of the program and the name of the file we want to open
+<ol>
+<li>The program now expects the file name to be given in the command line</li>
+</ol>
+</li>
+<li>It opens the specified file and throws an error if it can't be found</li>
+<li>It validates that the file we opened is a valid UTF-8-encoded text file</li>
+</ol>
+<p>First, the program checks if we passed the correct number of arguments and throws an error if the user doesn't provide a file name.</p>
+<p>It reads the file at the location provided and returns an error if the file can't be read.</p>
+<p>Using the <a href="https://pkg.go.dev/unicode/utf8">unicode/utf8</a> package to validate that the file is encoded in UTF-8, meaning it's a text file.</p>
+<p>Finally, we print the content of the file to the terminal.</p>
+<pre><code class="language-go">if len(os.Args) &lt; 1 {
+	fmt.Println(&quot;Usage : &quot; + os.Args[0] + &quot; file name&quot;)
+	os.Exit(1)
+} // 1
+
+file, err := os.ReadFile(os.Args[1])
+if err != nil {
+	fmt.Println(&quot;Cannot read the file&quot;)
+	os.Exit(1)
+} // 2
+
+if !utf8.ValidString(string(file)) {
+	fmt.Println(&quot;File is not a text file&quot;)
+	os.Exit(1)
+}// 3
+
+fmt.Print(string(file))
+</code></pre>
+<p>We're still not quite there. The code depends on the user entering the file that they want to work with and the destination where we write the file is also hardcoded.</p>
+<h2 id="third-times-the-charm-third-iteration">Third Time's The Charm: Third Iteration</h2>
+<p>The third iteration makes one fundamental change: It uses a scanner to request user input for the source and destination file names.</p>
+<p>We use the <a href="https://pkg.go.dev/bufio#Scanner">bufio/Scanner</a> package to capture user input for the file name to open.</p>
+<p>We validate that the file the user wants to open is a valid UTF-8 text file.</p>
+<p>We use the same Scanner to ask the user for the name of the file to save to and save the file, throwing an error if we're unable to.</p>
+<pre><code class="language-go">func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println(&quot;Please enter the name of the file to open:&quot;)
+
+	var sourceFileName string
+	if scanner.Scan() {
+		sourceFileName = scanner.Text()
+	} else if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, &quot;error reading input: %s&quot;, err)
+		os.Exit(1)
+	} // 1
+
+	fileContent, err := os.ReadFile(sourceFileName)
+	if err != nil {
+		fmt.Println(&quot;Cannot read the file:&quot;, err)
+		os.Exit(1)
+	} // 2
+
+	if !utf8.ValidString(string(fileContent)) {
+		fmt.Println(&quot;File is not a valid UTF-8 text file&quot;)
+		os.Exit(1)
+	} // 3
+
+	fmt.Println(&quot;Please enter the location and file name to write to:&quot;)
+	if scanner.Scan() {
+		targetLocation := scanner.Text()
+
+		err = os.WriteFile(targetLocation, fileContent, 0644)
+		if err != nil {
+			fmt.Println(&quot;Failed to write to the file:&quot;, err)
+			os.Exit(1)
+		} else {
+			fmt.Printf(&quot;File successfully written to %s\n&quot;, targetLocation)
+		}
+	} else if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, &quot;error reading input: %s&quot;, err)
+		os.Exit(1)
+	} //4
+}
+</code></pre>
+<p>It's a good iteration and I'm happy with it but it can still be improved.</p>
+<p>We can make the scanner more forgiving and not throw an error if the file name is empty or can't be found, and let the user try again.</p>
+<p>This is an empty project. There is nothing between the open and write portions of the code. That's by design since this is likely to be the starter for other projects I want to work on.</p>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>

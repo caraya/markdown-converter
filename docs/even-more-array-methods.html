@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Even More Array Methods</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Even More Array Methods</h1>
+        <p>Created on: 2024-02-19</p>
+        <p>Filed Under: <span>Javascript</span>, <span>Notes</span></p>
+      </header>
+      <h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li>
+<ul>
+<li>
+<a href="#reversing-an-array-by-copy-with-toreversed">Reversing an array by copy with toReversed()</a></li>
+<li>
+<a href="#splicing-an-array-with-tospliced">Splicing an array with toSpliced()</a></li>
+<li>
+<a href="#sorting-array-copies-with-tosorted">Sorting array copies with toSorted()</a></li>
+<li>
+<a href="#creating-a-copy-of-an-array-with-a-single-updated-value">Creating a copy of an array with a single updated value</a></li>
+</ul>
+</li>
+</ul>
+<p>The ECMAScript specification gained a new set of methods for the Array object. These methods work on copies of the original array rather than modifying the original array directly.</p>
+<p>There are other ways to complete the tasks these methods do. Which method you use will largely depend on whether you need to keep the original array intact or not.</p>
+<h2 id="reversing-an-array-by-copy-with-toreversed">Reversing an array by copy with toReversed()</h2>
+<p>When I want to reverse the content of an array, I normally clone the array using <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from">from</a> and then reverse it using <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reverse">reverse</a>.</p>
+<pre><code class="language-js">let cars = ['Porsche', 'Ferrari', 'BMW']
+
+let reverseCars = Array.from(cars).reverse();
+
+console.log(reverseCars);
+// -&gt; ['BMW', 'Ferrari', 'Porsche']
+
+console.log(cars);
+// -&gt; ['Porsche', 'Ferrari', 'BMW']
+</code></pre>
+<p>Using the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toReversed">toReversed</a> method condenses the steps. It copies the original array and then reverses it.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;BMW&quot;]
+
+let carsReversed = cars.ToReversed;
+console.log(cars.toReversed())
+// -&gt; ['BMW', 'Ferrari', 'Porsche']
+
+console.log(cars)
+// -&gt; ['Porsche', 'Ferrari', 'BMW']
+</code></pre>
+<h2 id="splicing-an-array-with-tospliced">Splicing an array with toSpliced()</h2>
+<p>Traditionally, to splice a copy of an array we need to clone it (I use the <code>from</code> array method) and then splice it.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+let fewerCars = Array.from(cars).splice(2, 1);
+
+console.log(cars)
+// -&gt; [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+console.log(fewerCars)
+// -&gt; [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;BMW&quot;]
+</code></pre>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSpliced">toSpliced()</a>
+consolidates the process.</p>
+<p>It first copies the array and then it splices one or more values as instructed. It leaves the original array intact for further work.</p>
+<p><strong>Array indices are zero-based. The first index is 0, not 1.</strong></p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+let splicedCars = cars.toSpliced(2,1)
+
+console.log(splicedCars)
+// -&gt; ['Porsche', 'Ferrari', 'BMW']
+</code></pre>
+<h2 id="sorting-array-copies-with-tosorted">Sorting array copies with toSorted()</h2>
+<p>Sorting the content of an array has always felt complicated.</p>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort">sort()</a> method of Array instances sorts the elements of an array in place and returns the reference to the same array, now sorted.</p>
+<p>The default sorting mechanism used in both <code>sort()</code> and <code>toSorted()</code> will compare the letters in strings. This may or may not be what you want, particularly if you're working with number arrays.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+cars.sort();
+
+console.log(cars)
+// -&gt; ['BMW', 'Ferrari', 'Jaguar', 'Porsche']
+</code></pre>
+<p>The sort method takes an optional parameter with a custom sorting function.</p>
+<p>In the example, The function will compare the length of two array values and sort them from longest to shortest.  It has some shortcomings (it doesn't take into account what happens if the lengths are equal) but as an example it's OK.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+
+cars.sort(function (car1, car2) {
+  if (car1.length &gt; car2.length) {
+    return -1;
+  }
+  return 1;
+})
+
+console.log(cars)
+// -&gt; ['Porsche', 'Ferrari', 'Jaguar', 'BMW']
+</code></pre>
+<p>The Problem is that this sorts the array in place, we no longer have the original array to work with.</p>
+<p>That's where the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted">toSorted()</a> method comes in.</p>
+<p>It will create a copy of the array and then sort it, either using the default algorithm or whatever custom function we use to sort.</p>
+<p><code>toSorted()</code> also supports the custom sorting function parameter, with the same shortcomings as those we found when using the function in the <code>sort</code> method.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+let sortedCars = cars.toSorted(function (car1, car2) {
+  if (car1.length &gt; car2.length) {
+    return -1;
+  }
+  return 1;
+})
+
+console.log(cars)
+// -&gt; ['Porsche', 'Ferrari', 'Jaguar', 'BMW']
+</code></pre>
+<h2 id="creating-a-copy-of-an-array-with-a-single-updated-value">Creating a copy of an array with a single updated value</h2>
+<p>When we want to replace one element of an array we have to do it manually, usually by assigning a new value to the given index of the array. For example, if we want to change the third element of an array, we'd do something like this:</p>
+<pre><code class="language-js">arraName[2] = &quot;new value&quot;;
+</code></pre>
+<p>Like all other traditional methods, this will change the original array. In this case, the <code>cars</code> array is changed permanently.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+cars[2] = 'Koenigsegg';
+
+console.log(cars);
+// -&gt; ['Porsche', 'Ferrari', 'Koenigsegg', 'BMW']
+</code></pre>
+<p>If we want to keep the original array we can use the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted">with()</a> method.</p>
+<p>This method will create a copy of the array and replace the desired items in the array copy.</p>
+<p>This will work to replace individual items. It will not work replacing multiples.</p>
+<p>The values of the array items are zero-based. The first item is 0, not 1.</p>
+<pre><code class="language-js">let cars = [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+let fastCars = cars.with(2, 'Koenigsegg');
+
+console.log(cars);
+// -&gt; [&quot;Porsche&quot;, &quot;Ferrari&quot;, &quot;Jaguar&quot;, &quot;BMW&quot;]
+
+console.log(fastCars);
+// -&gt; ['Porsche', 'Ferrari', 'Koenigsegg', 'BMW']
+</code></pre>
+<p>These four methods provide simpler ways to do things that we've done before but will make a copy of our original array and modify the copy.</p>
+<p>This may or may not be what we want to do. That decision will depend on the project and what browser versions you need to support.</p>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>

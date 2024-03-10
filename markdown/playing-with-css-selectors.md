@@ -2,7 +2,7 @@
 title: "Playing with CSS Selectors"
 date: 2024-02-07
 tags:
-	- CSS
+  - CSS
 ---
 
 CSS has evolved significantly over the last few years. Some of these changes deal with a set of selectors known as the *functional pseudo-classes*.

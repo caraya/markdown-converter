@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/prism.css">
+    <title>Javascript Events</title>
+</head>
+<body>
+
+  <div class="grid-container">
+    <main>
+      <header>
+        <h1>Javascript Events</h1>
+        <p>Created on: 2024-06-30</p>
+        <p>Filed Under: </p>
+      </header>
+      <h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li>
+<ul>
+<li>
+<a href="#what-are-events">What are events?</a></li>
+<li>
+<a href="#handling-events">Handling events</a><ul>
+<li>
+<a href="#pointer-events-heads-up">Pointer events heads-up</a></li>
+</ul>
+</li>
+<li>
+<a href="#custom-events">Custom events</a><ul>
+<li>
+<a href="#event-propagation-bubbling-and-capturing">Event propagation, bubbling and capturing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>When working on a demo for a different post, I realized that I don't really know how events work beyond how to add them to the page.</p>
+<p>This post will look at events and events listeners, how to add them to the page and additional information that may be useful when working with events.</p>
+<h2 id="what-are-events">What are events?</h2>
+<p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event">Event</a> API represents an event that happens in the DOM.</p>
+<p>See MDN's <a href="https://developer.mozilla.org/en-US/docs/Web/Events">Event reference</a> page for a list of the different types of events that are available.</p>
+<h2 id="handling-events">Handling events</h2>
+<p>Browsers generate events all the time. When you move the mouse or tab in or out of an element when you click on a link or a button, or when you type in a text area for example.</p>
+<p>As a developer, you can choose to interact with or handle these events to produce interactivity.</p>
+<p>In older browsers, you would handle events using <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#event_handler_attributes">onevent handler attributes</a>. In older code you may see something like this:</p>
+<pre><code class="language-js">&lt;button onclick=&quot;console.log(event)&quot;&gt;
+  Click me!
+&lt;/button&gt;
+</code></pre>
+<p>When you click the button the <code>onclick</code> event will activate and the event will be logged to the console.</p>
+<p>The first evolution of event handlers moved the code outside the HTML attribute and into a separate script. Because we no longer have a reference to the element triggering the event, we need to provide it.</p>
+<pre><code class="language-js">const myButton = document.querySelector(&quot;button&quot;)
+
+myButton.onclick = console.log(myButton.innerText);
+</code></pre>
+<p>The next, and current, iteration of event handles use the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event#:~:text=EventTarget.addEventListener()">addEventListener</a> function to handle events.</p>
+<p><code>addEventListener()</code> takes two parameters: the name of the event that we want to handle and a function that will handle the event.</p>
+<pre><code class="language-js">const myButton = document.querySelector(&quot;button&quot;)
+
+myButton.addEventListener('click', (event) =&gt; {
+  console.log(myButton.innerText);
+})
+</code></pre>
+<p>We can also use <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll">querySelectorAll</a> to attach the same event to multiple instances of an element.</p>
+<p>This example, taken from <a href="https://flaviocopes.com/how-to-add-event-listener-multiple-elements-javascript/">How to add an event listener to multiple elements in JavaScript</a>, shows how we can add the same event handler to multiple elements.</p>
+<pre><code class="language-js">document.querySelectorAll('button').forEach(item =&gt; {
+  item.addEventListener('click', (event) =&gt; {
+    console.log(event)
+  })
+})
+</code></pre>
+<h3 id="pointer-events-heads-up">Pointer events heads-up</h3>
+<p>Note that in addition to <a href="https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent">mouse</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/API/Touch_events">touch events</a> you have <a href="https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events">pointer events</a>.</p>
+<p>Pointer events provide an enhanced experience for pointer devices other than mice, however, they may have some differences with mouse and touch events.</p>
+<p>One way to handle these differences is to test for the type of pointer device being used.</p>
+<p><code>pointerType</code> is a read-only property of pointer events that detects the type of pointer device used. The three possible values are:</p>
+<ul>
+<li>mouse</li>
+<li>pen</li>
+<li>touch</li>
+</ul>
+<p>If the type of pointer device can't be detected or doesn't match the three available values, it will return an empty string.</p>
+<p>For the <code>pointerdown</code> event, we use a switch statement to test the type of pointer device used. We then create a different function to handle each type of device and, if the device doesn't match our list, we let the user know in the console.</p>
+<pre><code class="language-js">myButton.addEventListener(&quot;pointerdown&quot;, (event) =&gt; {
+  switch (event.pointerType) {
+    case &quot;mouse&quot;:
+      process_mouse(event);
+      break;
+    case &quot;pen&quot;:
+      process_pen(event);
+      break;
+    case &quot;touch&quot;:
+      process_touch(event);
+      break;
+    default:
+      console.log(`pointerType ${ev.pointerType} is not supported`);
+  }
+});
+</code></pre>
+<p>Pointer events are useful but require significantly more work for limited functionality.</p>
+<h2 id="custom-events">Custom events</h2>
+<p>Most of the time we will work with browser-generated events. There are times when we want to fire our own events and handle them appropriately.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/Events/Creating_and_triggering_events">Creating and triggering events</a> shows how to create custom events. I've chosen to use the <a href="https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent">CustomEvent</a> interface to create custom events that can pass data to the handlers in the <code>details</code> attribute.
+After building the event we call <a href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent">dispatchEvent()</a> to send the event to be handled.</p>
+<p><code>dispatchEvent()</code> sends an Event to the object, invoking the affected event listeners in the appropriate order. The normal event processing rules (including the capturing and optional bubbling phase) also apply to events dispatched manually with dispatchEvent().</p>
+<p>Calling <code>dispatchEvent()</code> is the last step to firing an event. You should have already created and initialized the event you want to dispatch.</p>
+<p>Using the example above we dispatch like this:</p>
+<pre><code class="language-js">const myButton = document.querySelector('#myButton')
+
+myButton.dispatchEvent(myEvent);
+</code></pre>
+<p>With custom events, we get additional flexibility to craft specific types of events.</p>
+<h3 id="event-propagation-bubbling-and-capturing">Event propagation, bubbling and capturing</h3>
+<p>Javascript has two different ways to propagate events around the DOM.</p>
+<p><code>bubbling</code> travels from the target up to the root, and <code>capturing</code> travels from the root down to the target.</p>
+<p><code>root</code> is the highest-level parent of the target. This is usually the document, which is a (possibly distant) parent of your target element.</p>
+<p>The target is the DOM node that triggered the event.</p>
+<p>Capturing is not used nearly as commonly as bubbling. <code>addEventListener()</code> has an optional third parameter, <code>useCapture</code>, that controls the phase of the propagation. If the value is true, it will cause the listener to be fired in the capturing phase. When the value is false, it will apply to the bubbling phase.</p>
+<p>Once you trigger the event, it will propagate up to the root, and it will trigger every event handler associated with the same type.</p>
+<p>For example, if your button has a click event, during the bubbling phase, it will bubble up to the root, and trigger every click event along the way.</p>
+<p>You also have means to prevent even bubbling and propagation.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation">event.stopPropagation()</a> prevents further propagation of the current event in the capturing and bubbling phases. It will stop events further up the bubbling chain but not the handler that calls <code>stopPropagation</code> or any other handlers attached to the same element.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Event/stopImmediatePropagation">stopImmediatePropagation()</a> will stop all events up the chain from being triggered.</p>
+<p>For a full working example, see the Codepen below:</p>
+<iframe height="300" style="width: 100%;" scrolling="no" title="event propagation" src="https://codepen.io/caraya/embed/zYyMzBW?default-tab=result&editable=true" frameborder="no" loading="lazy" allowtransparency="true" allowfullscreen="true">
+  See the Pen <a href="https://codepen.io/caraya/pen/zYyMzBW">
+  event propagation</a> by Carlos Araya (<a href="https://codepen.io/caraya">@caraya</a>)
+  on <a href="https://codepen.io">CodePen</a>.
+</iframe>
+<p>Make sure that you have a console, either the browser's or Codepen's, open since the results will be posted there.</p>
+<p>The first time you run the Codepen, it will print 1 2 and 3.</p>
+<p>Try adding <code>event.stopPropagation();</code> inside the <code>first</code> function and save it. It should print 1 and 2.</p>
+<p>Now, change <code>event.stopPropagation()</code> to <code>event.stopImmediatePropagation();</code>. It should now print 1, the result of the function that stopped propagation, and nothing else.</p>
+<p>There is a lot more to experiment with events. This is just the starting point.</p>
+
+    </main>
+  </div>
+
+  <script src="js/prism.js"></script>
+</body>
+</html>
